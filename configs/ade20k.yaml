@@ -1,14 +1,14 @@
-DEVICE          : cuda              # device used for training and evaluation (cpu, cuda, cuda0, cuda1, ...)
+DEVICE          : cpu              # device used for training and evaluation (cpu, cuda, cuda0, cuda1, ...)
 SAVE_DIR        : 'output'         # output folder name used for saving the model, logs and inference results
 
 MODEL:                                    
   NAME          : SegFormer                                           # name of the model you are using
-  BACKBONE      : MiT-B2                                                  # model variant
-  PRETRAINED    : 'checkpoints/backbones/mit/mit_b2.pth'              # backbone model's weight 
+  BACKBONE      : MiT-B3                                                  # model variant
+  PRETRAINED    : 'checkpoint/backbones/mit/mit_b3.pth'              # backbone model's weight 
 
 DATASET:
   NAME          : ADE20K                                              # dataset name to be trained with (camvid, cityscapes, ade20k)
-  ROOT          : 'data/ADEChallengeData2016'                         # dataset root path
+  ROOT          : 'data/ADEChallenge/ADEChallengeData2016'                         # dataset root path
   IGNORE_LABEL  : -1
 
 TRAIN:
@@ -36,7 +36,7 @@ SCHEDULER:
   
 
 EVAL:
-  MODEL_PATH    : 'checkpoints/pretrained/segformer/segformer.b2.ade.pth'  # trained model file path
+  MODEL_PATH    : 'checkpoint/pretrained/SegFormer/segformer.b3.ade.pth'  # trained model file path
   IMAGE_SIZE    : [512, 512]                                                            # evaluation image size in (h, w)                       
   MSF: 
     ENABLE      : false                                                                 # multi-scale and flip evaluation  
@@ -45,7 +45,7 @@ EVAL:
 
 
 TEST:
-  MODEL_PATH    : 'checkpoints/pretrained/segformer/segformer.b2.ade.pth'  # trained model file path
+  MODEL_PATH    : 'checkpoint/pretrained/SegFormer/segformer.b3.ade.pth'  # trained model file path
   FILE          : 'assests/ade'                                                         # filename or foldername 
   IMAGE_SIZE    : [512, 512]                                                            # inference image size in (h, w)
   OVERLAY       : true                                                                  # save the overlay result (image_alpha+label_alpha)
