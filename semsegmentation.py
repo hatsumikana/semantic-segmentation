@@ -11,14 +11,9 @@ from semseg.models import *
 from semseg.datasets import *
 from semseg.utils.utils import timer
 from semseg.utils.visualize import draw_text
-import time
-import cv2
-from PIL import Image
-
 
 from rich.console import Console
 console = Console()
-
 
 class SemSeg:
     def __init__(self, cfg) -> None:
@@ -56,11 +51,6 @@ class SemSeg:
         image = T.Resize((nH, nW))(image)
         # divide by 255, norm and add batch dim
         image = self.tf_pipeline(image).to(self.device)
-        print(image.shape)
-        transform = T.ToPILImage()
-        img = transform(image.squeeze(0))
-        img.show()
-        # image.numpy().save('image.png')
         return image
 
     def postprocess(self, orig_img: Tensor, seg_map: Tensor, overlay: bool) -> Tensor:
@@ -77,58 +67,13 @@ class SemSeg:
         image = draw_text(seg_image, seg_map, self.labels)
         return image
 
-    # @torch.inference_mode()
     @timer
     def model_forward(self, img: Tensor) -> Tensor:
         return self.model(img)
         
     def predict(self, img_fname: str, overlay: bool) -> Tensor:
         image = io.read_image(img_fname)
-        start_preprocess = time.time()
         img = self.preprocess(image)
-        stop_preprocess = time.time()        
-        start_forward = time.time()
         seg_map = self.model_forward(img)
-        stop_forward = time.time()
-        start_post = time.time()
         seg_map = self.postprocess(image, seg_map, overlay)
-        stop_post = time.time()        
-        print("Preprocess: ", stop_preprocess-start_preprocess)
-        print("Forward: ", stop_forward-start_forward)
-        print("Post: ", stop_post-start_post)
         return seg_map
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='configs/ade20k.yaml')
-    args = parser.parse_args()
-
-    with open(args.cfg) as f:
-        cfg = yaml.load(f, Loader=yaml.SafeLoader)
-
-    test_file = Path(cfg['TEST']['FILE'])
-    if not test_file.exists():
-        raise FileNotFoundError(test_file)
-
-    console.print(f"Model > [red]{cfg['MODEL']['NAME']} {cfg['MODEL']['BACKBONE']}[/red]")
-    console.print(f"Model > [red]{cfg['DATASET']['NAME']}[/red]")
-
-    save_dir = Path(cfg['SAVE_DIR']) / 'test_results'
-    save_dir.mkdir(exist_ok=True)
-    
-    semseg = SemSeg(cfg)
-
-    with console.status("[bright_green]Processing..."):
-        if test_file.is_file():
-            console.rule(f'[green]{test_file}')
-            segmap = semseg.predict(str(test_file), cfg['TEST']['OVERLAY'])
-            segmap.save(save_dir / f"{str(test_file.stem)}.png")
-        else:
-            files = test_file.glob('*.*')
-            for file in files:
-                console.rule(f'[green]{file}')
-                segmap = semseg.predict(str(file), cfg['TEST']['OVERLAY'])
-                segmap.save(save_dir / f"{str(file.stem)}.png")
-
-    console.rule(f"[cyan]Segmentation results are saved in `{save_dir}`")
