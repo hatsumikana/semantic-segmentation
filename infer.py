@@ -1,8 +1,8 @@
+from tkinter.tix import IMAGETEXT
 import torch
 import argparse
 import yaml
 import math
-from torch import Tensor
 from torch.nn import functional as F
 from pathlib import Path
 from torchvision import io
@@ -12,6 +12,10 @@ from semseg.datasets import *
 from semseg.utils.utils import timer
 from semseg.utils.visualize import draw_text
 from semsegmentation import SemSeg
+import cv2
+from PIL import Image
+import numpy as np
+import time
 
 from rich.console import Console
 console = Console()
@@ -19,33 +23,28 @@ console = Console()
 def run(args):
     with open(args.cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
-
-    test_file = Path(cfg['TEST']['FILE'])
-    if not test_file.exists():
-        raise FileNotFoundError(test_file)
+    
+    cap = cv2.VideoCapture(0)
+    print("WEBCAM STARTED ... ... ...")
+    # Check if the webcam is opened correctly
+    if not cap.isOpened():
+        raise IOError("Cannot open webcam")
 
     console.print(f"Model > [red]{cfg['MODEL']['NAME']} {cfg['MODEL']['BACKBONE']}[/red]")
     console.print(f"Model > [red]{cfg['DATASET']['NAME']}[/red]")
-
-    save_dir = Path(cfg['SAVE_DIR']) / 'test_results'
-    save_dir.mkdir(exist_ok=True)
     
     semseg = SemSeg(cfg)
 
-    with console.status("[bright_green]Processing..."):
-        if test_file.is_file():
-            console.rule(f'[green]{test_file}')
-            segmap = semseg.predict(str(test_file), cfg['TEST']['OVERLAY'])
-            segmap.save(save_dir / f"{str(test_file.stem)}.png")
-        else:
-            files = test_file.glob('*.*')
-            for file in files:
-                console.rule(f'[green]{file}')
-                segmap = semseg.predict(str(file), cfg['TEST']['OVERLAY'])
-                segmap.save(save_dir / f"{str(file.stem)}.png")
-
-    console.rule(f"[cyan]Segmentation results are saved in `{save_dir}`")
-
+    while(True):
+        _,frame = cap.read()
+        image = frame.copy()
+        segmap = semseg.predict(image=image, overlay=cfg['TEST']['OVERLAY'])
+        cv2.imshow('Segmentation', np.array(segmap))
+        c = cv2.waitKey(1)
+        if c == 27:
+            break
+    cap.release()
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

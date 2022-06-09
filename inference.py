@@ -56,11 +56,6 @@ class SemSeg:
         image = T.Resize((nH, nW))(image)
         # divide by 255, norm and add batch dim
         image = self.tf_pipeline(image).to(self.device)
-        print(image.shape)
-        transform = T.ToPILImage()
-        img = transform(image.squeeze(0))
-        img.show()
-        # image.numpy().save('image.png')
         return image
 
     def postprocess(self, orig_img: Tensor, seg_map: Tensor, overlay: bool) -> Tensor:
@@ -92,10 +87,11 @@ class SemSeg:
         stop_forward = time.time()
         start_post = time.time()
         seg_map = self.postprocess(image, seg_map, overlay)
+        print("Image shape: ", image.shape)
         stop_post = time.time()        
-        print("Preprocess: ", stop_preprocess-start_preprocess)
-        print("Forward: ", stop_forward-start_forward)
-        print("Post: ", stop_post-start_post)
+        # print("Preprocess: ", stop_preprocess-start_preprocess)
+        # print("Forward: ", stop_forward-start_forward)
+        # print("Post: ", stop_post-start_post)
         return seg_map
 
 

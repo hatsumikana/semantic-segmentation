@@ -11,6 +11,7 @@ from semseg.models import *
 from semseg.datasets import *
 from semseg.utils.utils import timer
 from semseg.utils.visualize import draw_text
+import cv2
 
 from rich.console import Console
 console = Console()
@@ -38,17 +39,20 @@ class SemSeg:
             T.Lambda(lambda x: x.unsqueeze(0))
         ])
 
-    def preprocess(self, image: Tensor) -> Tensor:
-        H, W = image.shape[1:]
+    def preprocess(self, image):
+        W, H, _ = image.shape
         console.print(f"Original Image Size > [red]{H}x{W}[/red]")
         # scale the short side of image to target size
         scale_factor = self.size[0] / min(H, W)
         nH, nW = round(H*scale_factor), round(W*scale_factor)
+        
         # make it divisible by model stride
         nH, nW = int(math.ceil(nH / 32)) * 32, int(math.ceil(nW / 32)) * 32
         console.print(f"Inference Image Size > [red]{nH}x{nW}[/red]")
         # resize the image
-        image = T.Resize((nH, nW))(image)
+        image = cv2.resize(image,(nH,nW), interpolation = cv2.INTER_AREA)
+        image = torch.tensor(image)
+        image = image.permute((2, 0, 1))
         # divide by 255, norm and add batch dim
         image = self.tf_pipeline(image).to(self.device)
         return image
@@ -71,9 +75,10 @@ class SemSeg:
     def model_forward(self, img: Tensor) -> Tensor:
         return self.model(img)
         
-    def predict(self, img_fname: str, overlay: bool) -> Tensor:
-        image = io.read_image(img_fname)
+    def predict(self, image, overlay: bool):
         img = self.preprocess(image)
         seg_map = self.model_forward(img)
-        seg_map = self.postprocess(image, seg_map, overlay)
+        image_tensor = torch.tensor(image)
+        image_tensor = image_tensor.permute((2, 0, 1))
+        seg_map = self.postprocess(image_tensor, seg_map, overlay)
         return seg_map
