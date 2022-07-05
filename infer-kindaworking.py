@@ -126,20 +126,8 @@ if __name__ == '__main__':
         count = 0 
         while(True):
             _, frame = cap.read()
-            # print(frame)
-            # print(type(frame))
             src = frame.copy()
-            # print("INIGTIAL SRC SHAPE",src.shape)
-            # cv2.imwrite("output/frames/frame_" + str(count) +".jpg", frame)
-            # count += 1
-            # save_dir = Path(cfg['SAVE_DIR']) / 'test_results'
-            # save_dir.mkdir(exist_ok=True)
-            print(frame.shape)
-            
-            
-
-            # with console.status("[bright_green]Processing..."):
-            # img = semseg.preprocess(torch.tensor(src))
+        
             H, W = src.shape[:-1]
             console.print(f"Original Image Size > [red]{H}x{W}[/red]")
             # scale the short side of image to target size
@@ -150,14 +138,7 @@ if __name__ == '__main__':
             nH, nW = int(math.ceil(nH / 32)) * 32, int(math.ceil(nW / 32)) * 32
             console.print(f"Inference Image Size > [red]{nH}x{nW}[/red]")
             # resize the image
-            print(src.shape)
-            # image = T.Resize((nH, nW))(Image.fromarray(src))
-            # image = cv2.resize(np.array(image), (nH, nW), interpolation = cv2.INTER_AREA)
-            # console.print(f"resized")
-            # print(type(image))
-            # print("SRC SHAPE: ",image.shape)
             image = torch.tensor(src)
-            # print(image.shape)
             image = image.reshape(3, 720, 1280)
             # # divide by 255, norm and add batch dim
             tf_pipeline = T.Compose([
@@ -165,25 +146,10 @@ if __name__ == '__main__':
             # T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
             # T.Lambda(lambda x: x.unsqueeze(0))
             ])
-            # image = tf_pipeline(image).to('cpu')
-            # print(image.size())
-            # print(type(image.numpy()))
-            # image = image.numpy()
-            # print(image.shape)
             image = image.unsqueeze(0)
             # return image
-
-
+            
             segmap = semseg.predict_camera(image.float(), cfg['TEST']['OVERLAY'])
-            # print(type(segmap))
-                    # segmap.save(save_dir / f"{str(test_file.stem)}.png")
-                # print("Here")
-
-            # console.rule(f"[cyan]Segmentation results are saved in `{save_dir}`")
-            # print(type(img.numpy()))
-            # image = image.unsqueeze(0)
-            # image = image.reshape(512, 928, 3)
-            # cv2.imshow('Frame', image.numpy())
             cv2.imshow('Input', np.array(segmap))
             c = cv2.waitKey(1)
             if c == 27:
