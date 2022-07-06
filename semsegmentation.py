@@ -38,6 +38,9 @@ class SemSeg:
             T.Lambda(lambda x: x.unsqueeze(0))
         ])
 
+        self.prob_logit = None
+        self.labels_logit = None
+
     def preprocess(self, image):
         W, H, _ = image.shape
         console.print(f"Original Image Size > [red]{H}x{W}[/red]")
@@ -61,22 +64,22 @@ class SemSeg:
         seg_map = F.interpolate(seg_map, size=orig_img.shape[-2:], mode='bilinear', align_corners=True)
 
         # get prediction probability of each class for each pixel
-        prob_logit = seg_map[0].reshape((720,1280,150))
-        prob_logit = prob_logit.softmax(dim=2)  # shape: (720, 1280, 150)
+        self.prob_logit = seg_map[0].reshape((seg_map.shape[2],seg_map.shape[3],seg_map.shape[1]))
+        self.prob_logit = self.prob_logit.softmax(dim=2)  # shape: (h, w, n)
 
         # get segmentation map (value being 0 to num_classes)
         seg_map = seg_map.softmax(dim=1).argmax(dim=1).cpu().to(int)
-
+        
         # get predicted class labels for each pixel
-        labels_logit = seg_map[0] # shape: (720, 1280)
-
+        self.labels_logit = seg_map[0].cpu() # shape: (h, w)
+   
         # convert segmentation map to color map
         seg_image = self.palette[seg_map].squeeze()
         if overlay: 
             seg_image = (orig_img.permute(1, 2, 0) * 0.4) + (seg_image * 0.6)
 
         image = draw_text(seg_image, seg_map, self.labels)
-        return image, prob_logit, labels_logit
+        return image
 
     @timer
     def model_forward(self, img: Tensor) -> Tensor:
@@ -88,5 +91,5 @@ class SemSeg:
         
         image_tensor = torch.tensor(image)
         image_tensor = image_tensor.permute((2, 0, 1))
-        seg_map, prob_logit, labels_logit = self.postprocess(image_tensor, seg_map, overlay)
-        return seg_map, prob_logit, labels_logit
+        seg_map = self.postprocess(image_tensor, seg_map, overlay)
+        return seg_map

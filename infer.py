@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 # from realsense_camera import *
 from fps import FPS
+import time
 
 from rich.console import Console
 console = Console()
@@ -18,7 +19,8 @@ def run(args):
     with open(args.cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
     
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(18)
+    # cap.set(cv2.CAP_PROP_FPS, 2)
     print("WEBCAM STARTED ... ... ...")
     # Check if the webcam is opened correctly
     if not cap.isOpened():
@@ -33,9 +35,10 @@ def run(args):
         # _,bgr_frame = cap.read()
         # ret, bgr_frame, depth_frame = rs.get_frame_stream()
         ret, bgr_frame = cap.read()
+        time.sleep(1)
         image = bgr_frame.copy()
         total_fps.start()
-        segmap, prob_logit, labels_logit = semseg.predict(image=image, overlay=cfg['TEST']['OVERLAY'])
+        segmap = semseg.predict(image=image, overlay=cfg['TEST']['OVERLAY'])
         segmap = np.array(segmap)
         total_fps.stop()
     

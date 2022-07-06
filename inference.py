@@ -31,7 +31,7 @@ class SemSeg:
 
         # initialize the model and load weights and send to device
         self.model = eval(cfg['MODEL']['NAME'])(cfg['MODEL']['BACKBONE'], len(self.palette))
-        self.model.load_state_dict(torch.load(cfg['TEST']['MODEL_PATH'], map_location='cpu'))
+        self.model.load_state_dict(torch.load(cfg['TEST']['MODEL_PATH'], map_location=self.device))
         self.model = self.model.to(self.device)
         self.model.eval()
 
